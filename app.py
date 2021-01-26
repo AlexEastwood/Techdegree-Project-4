@@ -67,19 +67,30 @@ def menu():
             clear()
             menu_options[choice]()
             
+def display(entry):
+    timestamp = entry.date_updated.strftime('%m/%d/%Y')
+    print("ID: " + str(entry.product_id))
+    print("Name: " + entry.product_name)
+    print("Price: $" + "{:.2f}".format(entry.product_price / 100))
+    print("Quantity: " + str(entry.product_quantity))
+    print("Last updated: " + timestamp)
+    
+           
 def view_entries():
-    """View entries"""
+    """View all entries"""
     entries = Entry.select().order_by(Entry.product_id.asc())
-    
-    for entry in entries:
-        timestamp = entry.date_updated.strftime('%m/%d/%Y')
-        print("ID: " + str(entry.product_id))
-        print("Name: " + entry.product_name)
-        print("Price: $" + "{:.2f}".format(entry.product_price / 100))
-        print("Quantity: " + str(entry.product_quantity))
-        print("Last updated: " + timestamp)
-    
-    input()
+    selection = (input("Please enter a product ID (leave blank to view all): "))
+    if selection == "":
+        for entry in entries:
+            display(entry)
+        input("Press Enter to continue")
+    elif selection.isnumeric() and 1 <= int(selection) <= len(entries):
+        entry = Entry.get_by_id(int(selection))
+        display(entry)
+        input("Press Enter to continue")
+    else:
+        print("That's not a valid Product ID")
+        input("Press Enter to continue")
 
 def add_entry():
     """Add a new entry"""
