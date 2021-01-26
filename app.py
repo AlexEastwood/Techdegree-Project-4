@@ -1,6 +1,7 @@
 import csv
 import datetime
 import os
+import re
 import sys
 from collections import OrderedDict
 
@@ -94,11 +95,32 @@ def view_entries():
 
 def add_entry():
     """Add a new entry"""
-    pass
-
+    print("Enter your entry. Press ctrl+d when finished.")
+    new_name = input("Product Name: ")
+    while True:
+        try:
+            new_quantity = int(input("Quantity: "))
+        except ValueError:
+            continue
+        break
+    while True:
+        new_price = input("Price ($x.xx): ")
+        if re.match(r"\$[0-9]+\.[0-9]{2}", new_price):
+            break
+        else:
+            continue
+            
+    if input("Save entry? [Y/N] ").lower() != "n":
+            Entry.create(product_name = new_name,
+                        product_quantity = int(new_quantity),
+                        product_price = int(float(new_price[1:]) * 100))
+            print("Saved Successfully!")
+            input("Press Enter to continue")
+            
 def backup():
     """Backup the database"""
-    pass
+    entries = Entry.select().order_by(Entry.product_id.asc())
+    db.freeze(entries, format="csv", filename="export.csv")
 
 if __name__ =="__main__":
     initialize()
