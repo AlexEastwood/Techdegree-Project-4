@@ -17,7 +17,11 @@ class Entry(Model):
 
     class Meta:
         database = db
-        
+                
+def initialize():
+    db.connect()
+    db.create_tables([Entry], safe=True)
+    
 def add_items():     
     with open("inventory.csv", newline = "") as csvfile:
         invreader = csv.DictReader(csvfile, delimiter = ",")
@@ -41,13 +45,54 @@ def add_items():
                 item_update.date_updated = item['date_updated']
                 item_update.save()
                 
-def initialize():
-    db.connect()
-    db.create_tables([Entry], safe=True)
-  
+def clear():
+    os.system("cls" if os.name == "nt" else "clear")
+
+def menu():
+    menu_options = OrderedDict([
+    ("V", view_entries),
+    ("A", add_entry),
+    ("B", backup),])
+    
+    choice = None
+    
+    while choice != "Q":
+        clear()
+        print("Enter 'Q' to quit")
+        for key, value in menu_options.items():
+            print("{}) {}".format(key, value.__doc__))
+        choice = input("Action: ").upper().strip()
+        
+        if choice in menu_options:
+            clear()
+            menu_options[choice]()
+            
+def view_entries():
+    """View entries"""
+    entries = Entry.select().order_by(Entry.product_id.asc())
+    
+    for entry in entries:
+        timestamp = entry.date_updated.strftime('%m/%d/%Y')
+        print("ID: " + str(entry.product_id))
+        print("Name: " + entry.product_name)
+        print("Price: $" + "{:.2f}".format(entry.product_price / 100))
+        print("Quantity: " + str(entry.product_quantity))
+        print("Last updated: " + timestamp)
+    
+    input()
+
+def add_entry():
+    """Add a new entry"""
+    pass
+
+def backup():
+    """Backup the database"""
+    pass
+
 if __name__ =="__main__":
     initialize()
     add_items()
+    menu()
             
             
             
