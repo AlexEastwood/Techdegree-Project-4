@@ -9,7 +9,9 @@ from peewee import *
 
 db = SqliteDatabase("inventory.db")
 
-class Entry(Model):
+
+
+class Product(Model):
     product_id = AutoField()
     product_name = CharField(unique=True)
     product_quantity = IntegerField()
@@ -21,7 +23,7 @@ class Entry(Model):
                 
 def initialize():
     db.connect()
-    db.create_tables([Entry], safe=True)
+    db.create_tables([Product], safe=True)
     
 def add_items():     
     with open("inventory.csv", newline = "") as csvfile:
@@ -32,14 +34,14 @@ def add_items():
             item["product_price"] = int(float(item["product_price"][1:]) * 100)
             item["date_updated"] = (datetime.datetime.strptime(item['date_updated'],'%m/%d/%Y').date())
             try:
-                Entry.create(
+                Product.create(
                 product_name = item['product_name'],
                 product_price = item['product_price'],
                 product_quantity = item['product_quantity'],
                 date_updated = item['date_updated'],
                 ).save()
             except IntegrityError:
-                item_update = Entry.get(product_name = item['product_name'])
+                item_update = Product.get(product_name = item['product_name'])
                 item_update.product_name = item['product_name']
                 item_update.product_price = item['product_price']
                 item_update.product_quantity = item['product_quantity']
@@ -52,7 +54,7 @@ def clear():
 def menu():
     menu_options = OrderedDict([
     ("V", view_entries),
-    ("A", add_entry),
+    ("A", add_product),
     ("B", backup),])
     
     choice = None
@@ -67,35 +69,38 @@ def menu():
         if choice in menu_options:
             clear()
             menu_options[choice]()
+        else:
+            print("That's not a valid choice")
+            input("Press Enter to continue")
             
-def display(entry):
-    timestamp = entry.date_updated.strftime('%m/%d/%Y')
-    print("ID: " + str(entry.product_id))
-    print("Name: " + entry.product_name)
-    print("Price: $" + "{:.2f}".format(entry.product_price / 100))
-    print("Quantity: " + str(entry.product_quantity))
-    print("Last updated: " + timestamp)
+def display(product):
+    timestamp = product.date_updated.strftime('%m/%d/%Y')
+    print("ID: " + str(product.product_id))
+    print("Name: " + product.product_name)
+    print("Price: $" + "{:.2f}".format(product.product_price / 100))
+    print("Quantity: " + str(product.product_quantity))
+    print("Last updated: " + timestamp + "\n")
     
            
 def view_entries():
     """View all entries"""
-    entries = Entry.select().order_by(Entry.product_id.asc())
+    entries = Product.select().order_by(Product.product_id.asc())
     selection = (input("Please enter a product ID (leave blank to view all): "))
     if selection == "":
-        for entry in entries:
-            display(entry)
+        for product in entries:
+            display(product)
         input("Press Enter to continue")
     elif selection.isnumeric() and 1 <= int(selection) <= len(entries):
-        entry = Entry.get_by_id(int(selection))
-        display(entry)
+        product = Product.get_by_id(int(selection))
+        display(product)
         input("Press Enter to continue")
     else:
         print("That's not a valid Product ID")
         input("Press Enter to continue")
 
-def add_entry():
-    """Add a new entry"""
-    print("Enter your entry. Press ctrl+d when finished.")
+def add_product():
+    """Add a new product"""
+    print("Enter your product.")
     new_name = input("Product Name: ")
     while True:
         try:
@@ -110,8 +115,8 @@ def add_entry():
         else:
             continue
             
-    if input("Save entry? [Y/N] ").lower() != "n":
-            Entry.create(product_name = new_name,
+    if input("Save product? [Y/N] ").lower() != "n":
+            Product.create(product_name = new_name,
                         product_quantity = int(new_quantity),
                         product_price = int(float(new_price[1:]) * 100))
             print("Saved Successfully!")
@@ -119,9 +124,22 @@ def add_entry():
             
 def backup():
     """Backup the database"""
-    entries = Entry.select().order_by(Entry.product_id.asc())
-    db.freeze(entries, format="csv", filename="export.csv")
-
+    entries = Product.select().order_by(Product.product_id.asc())
+    with open("backup.csv", "w", newline='', encoding='utf-8') as csvfile:
+        fieldnames = ["product_id", "product_name", "product_quantity", "product_price", "date_updated"]
+        backup_writer = csv.DictWriter(csvfile, fieldnames = fieldnames)
+        
+        backup_writer.writeheader()
+        for product in entries:
+            timestamp = product.date_updated.strftime('%m/%d/%Y')
+            backup_writer.writerow({
+                "product_id": product.product_id,
+                "product_name": product.product_name,
+                "product_quantity": product.product_quantity,
+                "product_price": product.product_price,
+                "date_updated": timestamp
+            })
+        
 if __name__ =="__main__":
     initialize()
     add_items()
