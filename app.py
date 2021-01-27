@@ -10,7 +10,6 @@ from peewee import *
 db = SqliteDatabase("inventory.db")
 
 
-
 class Product(Model):
     product_id = AutoField()
     product_name = CharField(unique=True)
@@ -20,20 +19,23 @@ class Product(Model):
 
     class Meta:
         database = db
-                
+
+
 def initialize():
     db.connect()
     db.create_tables([Product], safe=True)
     db.close()
-    
-def add_items():     
-    with open("inventory.csv", newline = "") as csvfile:
-        invreader = csv.DictReader(csvfile, delimiter = ",")
+
+
+def add_items():
+    with open("inventory.csv", newline="") as csvfile:
+        invreader = csv.DictReader(csvfile, delimiter=",")
         items = list(invreader)
         for item in items:
             item["product_quantity"] = int(item["product_quantity"])
             item["product_price"] = int(float(item["product_price"][1:]) * 100)
-            item["date_updated"] = (datetime.datetime.strptime(item['date_updated'],'%m/%d/%Y').date())
+            item["date_updated"] = (
+                datetime.datetime.strptime(item['date_updated'], '%m/%d/%Y').date())
             try:
                 Product.create(
                 product_name = item['product_name'],
@@ -48,7 +50,7 @@ def add_items():
                 item_update.product_quantity = item['product_quantity']
                 item_update.date_updated = item['date_updated']
                 item_update.save()
-                
+
 def clear():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -57,7 +59,7 @@ def menu():
     ("V", view_entries),
     ("A", add_product),
     ("B", backup),])
-    
+
     choice = None
     
     while choice != "Q":
@@ -67,10 +69,15 @@ def menu():
             print("{}) {}".format(key, value.__doc__))
         choice = input("Action: ").upper().strip()
         
-        if choice in menu_options:
+        if choice == "Q":
+            continue
+        elif choice in menu_options:
             clear()
             menu_options[choice]()
-            
+        else:
+            print("That's not a valid option")
+            input("Press Enter to continue")
+
 def display(product):
     timestamp = product.date_updated.strftime('%m/%d/%Y')
     print("ID: " + str(product.product_id))
@@ -78,8 +85,7 @@ def display(product):
     print("Price: $" + "{:.2f}".format(product.product_price / 100))
     print("Quantity: " + str(product.product_quantity))
     print("Last updated: " + timestamp + "\n")
-    
-           
+
 def view_entries():
     """View all entries"""
     entries = Product.select().order_by(Product.product_id.asc())
@@ -112,7 +118,7 @@ def add_product():
             break
         else:
             continue
-            
+    
     if input("Save product? [Y/N] ").lower() != "n":
         try:
             Product.create(
@@ -130,7 +136,7 @@ def add_product():
             
         print("Saved Successfully!")
         input("Press Enter to continue")
-            
+
 def backup():
     """Backup the database"""
     entries = Product.select().order_by(Product.product_id.asc())
@@ -148,11 +154,8 @@ def backup():
                 "product_price": product.product_price,
                 "date_updated": timestamp
             })
-        
+
 if __name__ =="__main__":
     initialize()
     add_items()
     menu()
-            
-            
-            
