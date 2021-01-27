@@ -24,6 +24,7 @@ class Product(Model):
 def initialize():
     db.connect()
     db.create_tables([Product], safe=True)
+    db.close()
     
 def add_items():     
     with open("inventory.csv", newline = "") as csvfile:
@@ -69,9 +70,6 @@ def menu():
         if choice in menu_options:
             clear()
             menu_options[choice]()
-        else:
-            print("That's not a valid choice")
-            input("Press Enter to continue")
             
 def display(product):
     timestamp = product.date_updated.strftime('%m/%d/%Y')
@@ -116,11 +114,22 @@ def add_product():
             continue
             
     if input("Save product? [Y/N] ").lower() != "n":
-            Product.create(product_name = new_name,
-                        product_quantity = int(new_quantity),
-                        product_price = int(float(new_price[1:]) * 100))
-            print("Saved Successfully!")
-            input("Press Enter to continue")
+        try:
+            Product.create(
+            product_name = new_name,
+            product_quantity = new_quantity,
+            product_price = int(float(new_price[1:]) * 100),
+            date_updated = datetime.datetime.now().date()
+            ).save()
+        except IntegrityError:
+            update = Product.get(product_name = new_name)
+            update.product_price = int(float(new_price[1:]) * 100)
+            update.product_quantity = new_quantity
+            update.date_updated = datetime.datetime.now().date()
+            update.save()
+            
+        print("Saved Successfully!")
+        input("Press Enter to continue")
             
 def backup():
     """Backup the database"""
