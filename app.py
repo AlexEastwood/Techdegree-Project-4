@@ -44,11 +44,17 @@ def add_items():
                                ).save()
             except IntegrityError:
                 item_update = Product.get(product_name=item['product_name'])
-                item_update.product_name = item['product_name']
-                item_update.product_price = item['product_price']
-                item_update.product_quantity = item['product_quantity']
-                item_update.date_updated = item['date_updated']
-                item_update.save()
+                
+                if item_update.date_updated <= item['date_updated']:
+                    item_update.product_name = item['product_name']
+                    item_update.product_price = item['product_price']
+                    item_update.product_quantity = item['product_quantity']
+                    item_update.date_updated = item['date_updated']
+                    item_update.save()
+                else:
+                    print("Newer entry found")
+    
+    input("All data loaded in! Press enter to continue")
 
 
 def clear():
