@@ -164,7 +164,7 @@ def backup():
                 "product_id": product.product_id,
                 "product_name": product.product_name,
                 "product_quantity": product.product_quantity,
-                "product_price": product.product_price,
+                "product_price": "$" + "{:.2f}".format(product.product_price / 100),
                 "date_updated": timestamp
             })
 
